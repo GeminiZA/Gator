@@ -53,6 +53,7 @@ func main() {
 	cmds.register("register", handlerRegister)
 	cmds.register("reset", handlerReset)
 	cmds.register("users", handlerUsers)
+	cmds.register("agg", handlerAgg)
 
 	// Run command
 	if len(os.Args) < 2 {
@@ -148,5 +149,17 @@ func handlerUsers(s *state, cmd command) error {
 			fmt.Printf("* %s\n", user)
 		}
 	}
+	return nil
+}
+
+func handlerAgg(s *state, cmd command) error {
+	if len(cmd.args) != 0 {
+		return fmt.Errorf("invalid arguments")
+	}
+	feed, err := fetchFeed(context.Background(), "https://wagslane.dev/index.xml")
+	if err != nil {
+		return err
+	}
+	fmt.Printf("%v\n", feed)
 	return nil
 }
