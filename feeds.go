@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/xml"
-	"fmt"
 	"html"
 	"io"
 	"net/http"
@@ -53,13 +52,4 @@ func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 		rssFeed.Channel.Item[i].Description = html.UnescapeString(rssFeed.Channel.Item[i].Description)
 	}
 	return &rssFeed, nil
-}
-
-func agg() error {
-	feed, err := fetchFeed(context.Background(), "https://wagslane.dev/index.xml")
-	if err != nil {
-		return err
-	}
-	fmt.Printf("%v\n", feed)
-	return nil
 }
