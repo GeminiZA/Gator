@@ -58,6 +58,7 @@ func main() {
 	cmds.register("feeds", handlerFeeds)
 	cmds.register("follow", middlewareLoggedIn(handlerFollow))
 	cmds.register("following", middlewareLoggedIn(handlerFollowing))
+	cmds.register("unfollow", middlewareLoggedIn(handlerUnfollow))
 
 	// Run command
 	if len(os.Args) < 2 {
@@ -256,6 +257,20 @@ func handlerFollowing(s *state, cmd command, user database.User) error {
 	fmt.Println("Feeds:")
 	for _, feed := range feedFollows {
 		fmt.Println(feed.FeedName)
+	}
+	return nil
+}
+
+func handlerUnfollow(s *state, cmd command, user database.User) error {
+	if len(cmd.args) != 1 {
+		return fmt.Errorf("invalid arguments")
+	}
+	err := s.db.DeleteFeedFollow(context.Background(), database.DeleteFeedFollowParams{
+		UserID: user.ID,
+		Url:    cmd.args[0],
+	})
+	if err != nil {
+		return err
 	}
 	return nil
 }
