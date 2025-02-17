@@ -14,3 +14,6 @@ WHERE name = $1;
 
 -- name: GetUsers :many
 SELECT name FROM users;
+
+-- name: GetUserName :one
+SELECT name FROM users WHERE id = $1;
