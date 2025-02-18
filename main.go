@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/GeminiZA/Gator/internal/config"
@@ -59,6 +60,7 @@ func main() {
 	cmds.register("follow", middlewareLoggedIn(handlerFollow))
 	cmds.register("following", middlewareLoggedIn(handlerFollowing))
 	cmds.register("unfollow", middlewareLoggedIn(handlerUnfollow))
+	cmds.register("browse", middlewareLoggedIn(handlerBrowse))
 
 	// Run command
 	if len(os.Args) < 2 {
@@ -168,15 +170,18 @@ func handlerUsers(s *state, cmd command) error {
 }
 
 func handlerAgg(s *state, cmd command) error {
-	if len(cmd.args) != 0 {
+	if len(cmd.args) != 1 {
 		return fmt.Errorf("invalid arguments")
 	}
-	feed, err := fetchFeed(context.Background(), "https://wagslane.dev/index.xml")
+	timeStr := cmd.args[0]
+	timeBetweenRequests, err := time.ParseDuration(timeStr)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%v\n", feed)
-	return nil
+	ticker := time.NewTicker(timeBetweenRequests)
+	for ; ; <-ticker.C {
+		s.scrapeFeeds()
+	}
 }
 
 func handlerAddFeed(s *state, cmd command, user database.User) error {
@@ -271,6 +276,35 @@ func handlerUnfollow(s *state, cmd command, user database.User) error {
 	})
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func handlerBrowse(s *state, cmd command, user database.User) error {
+	limit := 2
+	if len(cmd.args) > 1 {
+		return fmt.Errorf("invalid arguments")
+	}
+	if len(cmd.args) == 1 {
+		newLimit, err := strconv.Atoi(cmd.args[0])
+		if err != nil {
+			return err
+		}
+		limit = newLimit
+	}
+	posts, err := s.db.GetPostsForUser(context.Background(), database.GetPostsForUserParams{UserID: user.ID, Limit: int32(limit)})
+	if err != nil {
+		fmt.Println("Error getting posts")
+		return err
+	}
+	fmt.Printf("Posts:\n")
+	fmt.Printf("Found %d posts for user %s:\n", len(posts), user.Name)
+	for _, post := range posts {
+		fmt.Printf("%s from %s\n", post.PublishedAt.Time.Format("Mon Jan 2"), post.FeedName)
+		fmt.Printf("--- %s ---\n", post.Title.String)
+		fmt.Printf("    %s\n", post.Description.String)
+		fmt.Printf("Link: %s\n", post.Url.String)
+		fmt.Println("=====================================")
 	}
 	return nil
 }
