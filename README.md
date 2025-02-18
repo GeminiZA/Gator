@@ -1,0 +1,6 @@
+# gator
+
+### Requirements
+
+- Postgres
+- Go
